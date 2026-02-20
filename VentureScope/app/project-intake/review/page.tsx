@@ -229,12 +229,22 @@ export default function ReviewPage() {
       });
       const result = await res.json();
       if (!res.ok) throw new Error(result.error ?? 'Evaluation failed');
-      // Jump bar to 100%, pause briefly, then navigate
+
+      // Quick-parse confidence + risk so the home page table can show them without re-parsing
+      const confMatch = (result.riskScore?.text as string | undefined)?.match(/Confidence Score[^:*]*[:\*]+\s*\*?\*?(\d+)%/i);
+      const confidence = confMatch ? parseInt(confMatch[1]) : 75;
+      const riskMatch  = (result.riskScore?.text as string | undefined)?.match(/Risk Level[^:*]*[:\*]+\s*\*?\*?(Low|Medium|High)/i);
+      const riskLevel  = riskMatch?.[1] ?? 'Medium';
+
+      const id      = Date.now().toString();
+      const session = { id, createdAt: new Date().toISOString(), intake: data, result, confidence, riskLevel };
+
+      const existing: unknown[] = JSON.parse(localStorage.getItem('ventureScope_sessions') ?? '[]');
+      localStorage.setItem('ventureScope_sessions', JSON.stringify([session, ...existing]));
+
       setProgress(100);
-      localStorage.setItem('ventureScope_result', JSON.stringify(result));
-      localStorage.setItem('ventureScope_generated_at', new Date().toISOString());
       await new Promise(r => setTimeout(r, 700));
-      router.push('/results');
+      router.push(`/results?id=${id}`);
     } catch (err) {
       console.error('[handleFinalSubmit]', err);
       setIsSubmitting(false);

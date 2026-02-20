@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Button } from '@/components/ui/button';
-import { FileDown, Info, SquareArrowOutUpRight, X, TrendingUp, DollarSign, AlertTriangle, RotateCcw  } from 'lucide-react';
+import { FileDown, Info, SquareArrowOutUpRight, X, TrendingUp, DollarSign, AlertTriangle, RotateCcw, Loader2 } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -146,20 +147,61 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function ResultsPage() {
-  const [result,      setResult]      = useState<EvalResult | null>(null);
-  const [intake,      setIntake]      = useState<IntakeData | null>(null);
-  const [generatedAt, setGeneratedAt] = useState('');
-  const [expandedRow, setExpandedRow] = useState<number | null>(null);
+function ResultsContent() {
+  const searchParams  = useSearchParams();
+  const id            = searchParams.get('id');
+
+  const [result,        setResult]        = useState<EvalResult | null>(null);
+  const [intake,        setIntake]        = useState<IntakeData | null>(null);
+  const [generatedAt,   setGeneratedAt]   = useState('');
+  const [expandedRow,   setExpandedRow]   = useState<number | null>(null);
+  const [isGenerating,  setIsGenerating]  = useState(false);
 
   useEffect(() => {
-    const r = localStorage.getItem('ventureScope_result');
-    const i = localStorage.getItem('ventureScope_intake');
-    const t = localStorage.getItem('ventureScope_generated_at');
-    if (r) setResult(JSON.parse(r));
-    if (i) setIntake(JSON.parse(i));
-    setGeneratedAt(t ? new Date(t).toLocaleString() : new Date().toLocaleString());
-  }, []);
+    const sessions: { id: string; createdAt: string; intake: IntakeData; result: EvalResult }[] =
+      JSON.parse(localStorage.getItem('ventureScope_sessions') ?? '[]');
+    const session = id ? sessions.find(s => s.id === id) : sessions[0];
+    if (session) {
+      setResult(session.result);
+      setIntake(session.intake);
+      setGeneratedAt(new Date(session.createdAt).toLocaleString());
+    }
+  }, [id]);
+
+  async function handleGeneratePdf() {
+    if (!intake || isGenerating) return;
+    setIsGenerating(true);
+    try {
+      // Send the full session intake (all form fields) so template placeholders resolve
+      const sessions: { id: string; intake: Record<string, unknown> }[] =
+        JSON.parse(localStorage.getItem('ventureScope_sessions') ?? '[]');
+      const session = id ? sessions.find(s => s.id === id) : sessions[0];
+      const fullIntake = session?.intake ?? intake;
+
+      const res = await fetch('/api/generate-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(fullIntake),
+      });
+
+      if (!res.ok) {
+        const { error } = await res.json();
+        throw new Error(error ?? 'PDF generation failed');
+      }
+
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = `${intake.startupName}_Secure_Memo.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('[handleGeneratePdf]', err);
+    } finally {
+      setIsGenerating(false);
+    }
+  }
 
   if (!result || !intake) {
     return (
@@ -193,8 +235,10 @@ export default function ResultsPage() {
               {intake.fundingStage}
             </span>
           </div>
-          <Button size="sm" variant="outline" className="rounded-sm shrink-0">
-            <FileDown className="w-3.5 h-3.5 mr-1.5" /> Generate Secured Memo
+          <Button size="sm" variant="outline" className="rounded-sm shrink-0" onClick={handleGeneratePdf} disabled={isGenerating}>
+            {isGenerating
+              ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />Generating…</>
+              : <><FileDown className="w-3.5 h-3.5 mr-1.5" />Generate Secured Memo</>}
           </Button>
         </div>
         <div className="flex items-center justify-between mt-1">
@@ -209,13 +253,6 @@ export default function ResultsPage() {
       <div>
         <SectionLabel>Startup Overview</SectionLabel>
         <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-6 relative overflow-hidden">
-          {/* Watermark */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
-            <span className="text-slate-100 text-2xl font-extrabold uppercase tracking-widest -rotate-12 whitespace-nowrap">
-              Validation Memo — Confidential
-            </span>
-          </div>
-
           <div className="grid grid-cols-3 gap-x-8 gap-y-4 relative z-10">
             <div>
               <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Name</p>
@@ -452,5 +489,13 @@ export default function ResultsPage() {
       </div>
 
     </div>
+  );
+}
+
+export default function ResultsPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-64 text-slate-400 text-sm">Loading…</div>}>
+      <ResultsContent />
+    </Suspense>
   );
 }

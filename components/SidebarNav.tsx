@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FolderOpen, Bell, Calendar, Settings  } from 'lucide-react';
+import { ChartColumnBig, Database, Calendar, Settings, CircleQuestionMark, LayoutDashboard, Users, Circle  } from 'lucide-react';
 
 
 export default function SidebarNav() {
@@ -27,23 +27,23 @@ export default function SidebarNav() {
       {/* Brand */}
       <div className="px-4 pt-5 pb-4">
         <div className="flex items-center justify-center">
-          <Link href="/"><img src="/favicon.ico" alt="lito.ai" className="w-12 h-12" /></Link>
+          <Link href="/"><img src="/favicon.ico" alt="lito.ai" className="w-12 h-12 border" /></Link>
         </div>
       </div>
 
       {/* Navigation */}
       <nav className="flex flex-col gap-1 py-3 flex-1">
-        <Link href="/" className={navClass('/')}><FolderOpen /> Dashboard</Link>
-        <Link href="/inprogress" className={navClass('/inprogress')}><Bell /> Analytics</Link>
-        <Link href="/exported" className={navClass('/exported')}><Calendar /> Portfolio</Link>
-        <Link href="/exported" className={navClass('/exported')}><Calendar /> Data Library</Link>
+        <Link href="/" className={navClass('/')}><LayoutDashboard /> Dashboard</Link>
+        <Link href="/analytics" className={navClass('/analytics')}><ChartColumnBig /> Analytics</Link>
+        <Link href="/portfolio" className={navClass('/portfolio')}><Calendar /> Portfolio</Link>
+        <Link href="/library" className={navClass('/library')}><Database /> Data Library</Link>
 
         <div className="flex-1" />
 
         <Link href="/settings" className={navClass('/settings')}><Settings /> Settings</Link>
-        <Link href="/settings" className={navClass('/settings')}><Settings /> Get Help</Link>
-        <Link href="/settings" className={navClass('/settings')}><Settings /> Team</Link>
-        <Link href="/settings" className={navClass('/settings')}><Settings /> Icon</Link>
+        <Link href="/help" className={navClass('/help')}><CircleQuestionMark  /> Get Help</Link>
+        <Link href="/team" className={navClass('/team')}><Users /> Team</Link>
+        <Link href="/icon" className={navClass('/icon')}><Circle /></Link>
       </nav>
 
     </aside>

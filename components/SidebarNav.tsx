@@ -47,7 +47,7 @@ export default function SidebarNav() {
         <Link href="/settings" className={navClass('/settings')}><Settings strokeWidth={iconStroke('/settings')} /> Settings</Link>
         <Link href="/help" className={navClass('/help')}><CircleQuestionMark strokeWidth={iconStroke('/help')} /> Get Help</Link>
         <Link href="/team" className={navClass('/team')}><Users strokeWidth={iconStroke('/team')} /> Team</Link>
-        <Link href="/icon" className={navClass('/icon')}><Circle strokeWidth={iconStroke('/icon')} /></Link>
+        <Link href="/icon" className={navClass('/icon')}><Circle strokeWidth={iconStroke('/icon')} className='fill-amber-600 w-12 h-12'/></Link>
       </nav>
 
     </aside>

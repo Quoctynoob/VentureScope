@@ -34,6 +34,8 @@ import {
   ChevronLeft,
   ChevronRight,
   FolderCode,
+  EllipsisVertical,
+  Trash2,
 } from 'lucide-react';
 import { getUser, logoutUser } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
@@ -54,17 +56,11 @@ type Session = {
   riskLevel: string;
 };
 
-const RISK_COLORS: Record<string, string> = {
-  Low:    'bg-green-50 text-green-700 border border-green-200',
-  Medium: 'bg-amber-50 text-amber-700 border border-amber-200',
-  High:   'bg-red-50 text-red-700 border border-red-200',
-};
-
 type SortKey = 'industry' | 'confidence' | 'createdAt';
 type SortDir = 'asc' | 'desc';
 
 const PAGE_SIZES = [5, 10, 20, 30];
-const COLS = 11;
+const COLS = 12;
 
 export default function HomePage() {
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -74,7 +70,8 @@ export default function HomePage() {
   const [sortKey, setSortKey] = useState<SortKey>('createdAt');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(5);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const router = useRouter();
 
   useEffect(() => {
@@ -116,6 +113,25 @@ export default function HomePage() {
     setPage(1);
   }
 
+  function toggleAll() {
+    if (allPageSelected) {
+      setSelected((prev) => { const next = new Set(prev); paginated.forEach((s) => next.delete(s.id)); return next; });
+    } else {
+      setSelected((prev) => { const next = new Set(prev); paginated.forEach((s) => next.add(s.id)); return next; });
+    }
+  }
+
+  function toggleOne(id: string) {
+    setSelected((prev) => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; });
+  }
+
+  function handleDelete() {
+    const updated = sessions.filter((s) => !selected.has(s.id));
+    setSessions(updated);
+    localStorage.setItem('litoAi_sessions', JSON.stringify(updated));
+    setSelected(new Set());
+  }
+
   const filtered = useMemo(() => {
     let rows = [...sessions];
     if (search) {
@@ -144,12 +160,14 @@ export default function HomePage() {
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
+  const allPageSelected = paginated.length > 0 && paginated.every((s) => selected.has(s.id));
+  const somePageSelected = !allPageSelected && paginated.some((s) => selected.has(s.id));
 
   return (
     <>
       {/* Heading */}
       <div className="mb-6 flex items-start justify-between">
-        <h1 className="m-0 text-[22px] font-bold text-slate-900">Recent Research</h1>
+        <h1 className="m-0 text-3xl font-semibold text-slate-900">Current Batch</h1>
         <div>
           <Button variant="outline" size="sm" onClick={handleLogout} className="flex items-center gap-1.5 text-slate-600">
             <LogOut className="h-4 w-4" />
@@ -190,7 +208,7 @@ export default function HomePage() {
         <Link href="/project-intake">
           <Button>
             <Plus className="mr-1 h-4 w-4" />
-            New Project
+            Add New Company
           </Button>
         </Link>
       </div>
@@ -200,6 +218,15 @@ export default function HomePage() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-slate-300 cursor-pointer"
+                  checked={allPageSelected}
+                  ref={(el) => { if (el) el.indeterminate = somePageSelected; }}
+                  onChange={toggleAll}
+                />
+              </TableHead>
               <TableHead>Company</TableHead>
               <TableHead>Stage</TableHead>
               <TableHead>
@@ -222,13 +249,14 @@ export default function HomePage() {
                   Last Updated <ArrowUpDown className="ml-2 h-3.5 w-3.5 text-slate-400" />
                 </Button>
               </TableHead>
+              <TableHead>Action</TableHead>
               <TableHead />
             </TableRow>
           </TableHeader>
           <TableBody>
             {sessions.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={COLS} className="text-center py-10">
+                <TableCell colSpan={COLS + 1} className="text-center py-32">
                   <div className="flex flex-col items-center gap-2">
                     <span className='bg-slate-100 p-3 rounded-md inline-flex'><FolderCode className="w-5 h-5 text-slate-800" /></span>
                     <h1 className="text-base font-semibold text-slate-800">No Projects Yet</h1>
@@ -238,24 +266,42 @@ export default function HomePage() {
               </TableRow>
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={COLS} className="text-center text-slate-400 py-10">
+                <TableCell colSpan={COLS + 1} className="text-center text-slate-400 py-10">
                   No results match your filters.
                 </TableCell>
               </TableRow>
             ) : (
               paginated.map((s) => (
-                <TableRow key={s.id}>
+                <TableRow key={s.id} data-selected={selected.has(s.id)} className="data-[selected=true]:bg-slate-50">
+                  <TableCell>
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 rounded border-slate-300 cursor-pointer"
+                      checked={selected.has(s.id)}
+                      onChange={() => toggleOne(s.id)}
+                    />
+                  </TableCell>
                   <TableCell className="font-medium">{s.intake.company}</TableCell>
                   <TableCell className="text-slate-500">{s.intake.fundingStage}</TableCell>
                   <TableCell className="text-slate-500">{s.intake.industry}</TableCell>
                   <TableCell className="text-slate-500">{s.intake.primaryRegion ?? '—'}</TableCell>
                   <TableCell className="text-slate-500">{s.intake.revenueModel ?? '—'}</TableCell>
                   <TableCell>
-                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${RISK_COLORS[s.riskLevel] ?? RISK_COLORS.Medium}`}>
+                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full border">
                       {s.riskLevel}
                     </span>
                   </TableCell>
-                  <TableCell className="font-semibold">{s.confidence}%</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <div className="w-18 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-slate-500"
+                          style={{ width: `${s.confidence}%` }}
+                        />
+                      </div>
+                      <span className="text-xs font-semibold text-slate-700 tabular-nums w-8 text-right">{s.confidence}%</span>
+                    </div>
+                  </TableCell>
                   <TableCell className="text-slate-500">{s.intake.decision ?? '—'}</TableCell>
                   <TableCell className="text-slate-500">{s.intake.status ?? '—'}</TableCell>
                   <TableCell className="text-slate-500 text-xs">
@@ -265,7 +311,7 @@ export default function HomePage() {
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
+                          <EllipsisVertical className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
@@ -285,6 +331,15 @@ export default function HomePage() {
       {/* Pagination */}
       <div className="flex items-center justify-between py-4 text-sm text-slate-500">
         <div className="flex items-center gap-2">
+          <span>{selected.size} of {filtered.length} row{filtered.length !== 1 ? 's' : ''} selected</span>
+          {selected.size > 0 && (
+            <Button size="sm" variant="destructive" onClick={handleDelete} className="flex items-center gap-1.5 h-7 px-2 text-xs">
+              <Trash2 className="h-3 w-3" />
+              Delete
+            </Button>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
           <span>Rows per page</span>
           <Select value={String(pageSize)} onValueChange={handlePageSizeChange}>
             <SelectTrigger className="h-8 w-18">
@@ -296,8 +351,6 @@ export default function HomePage() {
               ))}
             </SelectContent>
           </Select>
-        </div>
-        <div className="flex items-center gap-2">
           <span>Page {page} of {totalPages}</span>
           <Button
             variant="outline"

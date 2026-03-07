@@ -27,18 +27,14 @@ import {
 } from '@/components/ui/table';
 import {
   Plus,
-  LogOut,
   ArrowUpDown,
   Search,
-  MoreHorizontal,
   ChevronLeft,
   ChevronRight,
   FolderCode,
   EllipsisVertical,
   Trash2,
 } from 'lucide-react';
-import { getUser, logoutUser } from '@/lib/auth';
-import { useRouter } from 'next/navigation';
 import { type Session, type SortKey, type SortDir } from '@/types';
 
 const PAGE_SIZES = [5, 10, 20, 30];
@@ -46,7 +42,6 @@ const COLS = 12;
 
 export default function HomePage() {
   const [sessions, setSessions] = useState<Session[]>([]);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [riskFilter, setRiskFilter] = useState('all');
   const [sortKey, setSortKey] = useState<SortKey>('createdAt');
@@ -54,21 +49,11 @@ export default function HomePage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const router = useRouter();
 
   useEffect(() => {
     const stored = localStorage.getItem('litoAi_sessions');
     if (stored) setSessions(JSON.parse(stored));
-
-    getUser().then((u) => {
-      if (u) setUserEmail(u.signInDetails?.loginId ?? null);
-    });
   }, []);
-
-  async function handleLogout() {
-    await logoutUser();
-    router.push('/login');
-  }
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) {
@@ -148,19 +133,8 @@ export default function HomePage() {
   return (
     <>
       {/* Heading */}
-      <div className="mb-6 flex items-start justify-between">
+      <div className="mb-6">
         <h1 className="m-0 text-3xl font-semibold text-slate-900">Current Batch</h1>
-        <div>
-          <Button variant="outline" size="sm" onClick={handleLogout} className="flex items-center gap-1.5 text-slate-600">
-            <LogOut className="h-4 w-4" />
-            Logout
-          </Button>
-          {userEmail && (
-            <p className="mt-1 text-sm text-slate-500">
-              Signed in as <span className="font-medium text-slate-700">{userEmail}</span>
-            </p>
-          )}
-        </div>
       </div>
 
       {/* Toolbar */}

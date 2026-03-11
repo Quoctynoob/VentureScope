@@ -69,10 +69,6 @@ export default function SidebarNav() {
         <Link href="/library" className={navClass('/library')}><Database strokeWidth={iconStroke('/library')} /> Library</Link>
 
         <div className="flex-1" />
-
-        <Link href="/settings" className={navClass('/settings')}><Settings strokeWidth={iconStroke('/settings')} /> Settings</Link>
-        <Link href="/help" className={navClass('/help')}><CircleQuestionMark strokeWidth={iconStroke('/help')} /> Get Help</Link>
-        <Link href="/team" className={navClass('/team')}><Users strokeWidth={iconStroke('/team')} /> Team</Link>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex flex-col items-center gap-0.5 px-2 py-2 mx-3 rounded-lg text-white hover:bg-gray-bar transition-colors outline-none">
@@ -83,6 +79,24 @@ export default function SidebarNav() {
           </DropdownMenuTrigger>
           <DropdownMenuContent side="top" align="center" className="w-52 mb-1 ml-3 bg-gray-bg border-slate-400 border">
             <DropdownMenuLabel className="text-xs text-white font-normal truncate">{userEmail ?? 'Account'}</DropdownMenuLabel>
+            <DropdownMenuItem asChild>
+              <Link href="/settings" className="text-white focus:text-white">
+                <Settings className="w-4 h-4 mr-2" />
+                Settings
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/help" className="text-white focus:text-white">
+                <CircleQuestionMark className="w-4 h-4 mr-2" />
+                Get Help
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/team" className="text-white focus:text-white">
+                <Users className="w-4 h-4 mr-2" />
+                Team
+              </Link>
+            </DropdownMenuItem>
             <DropdownMenuSeparator className="mx-2" />
             <DropdownMenuItem onClick={handleLogout} className="text-white cursor-pointer focus:text-white">
               <LogOut className="w-4 h-4 mr-2" />

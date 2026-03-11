@@ -54,7 +54,6 @@ export default function LoginPage() {
     <div className="min-h-screen flex">
       {/* Left half */}
       <div className="hidden lg:block w-1/2 bg-black" >
-        <h1 className="p-4"><Link href="/"><Button variant="outline">Back button</Button></Link></h1>
       </div>
 
       {/* Right half */}

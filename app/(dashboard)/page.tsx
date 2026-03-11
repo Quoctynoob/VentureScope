@@ -10,13 +10,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import Link from 'next/link';
+import { UploadDialog } from '@/components/upload-dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import Link from 'next/link';
 import {
   Table,
   TableBody,
@@ -26,7 +27,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
-  Plus,
   ArrowUpDown,
   Search,
   ChevronLeft,
@@ -161,12 +161,7 @@ export default function HomePage() {
             </SelectContent>
           </Select>
         </div>
-        <Link href="/project-intake">
-          <Button>
-            <Plus className="mr-1 h-4 w-4" />
-            Add New Company
-          </Button>
-        </Link>
+        <UploadDialog />
       </div>
 
       {/* Sessions table */}

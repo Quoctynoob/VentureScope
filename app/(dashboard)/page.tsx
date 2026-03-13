@@ -1,134 +1,29 @@
-'use client';
+import { getSessions } from '@/lib/actions/sessions';
+import { filterAndSortSessions, parseSearchParams } from '@/lib/session-utils';
+import { SessionsToolbar } from '@/components/sessions/sessions-toolbar';
+import { SessionsTable } from '@/components/sessions/sessions-table';
+import { PaginationControls } from '@/components/sessions/pagination-controls';
 
-import { useEffect, useState, useMemo } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import Link from 'next/link';
-import { UploadDialog } from '@/components/upload-dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  ArrowUpDown,
-  Search,
-  ChevronLeft,
-  ChevronRight,
-  FolderCode,
-  EllipsisVertical,
-  Trash2,
-} from 'lucide-react';
-import { type Session, type SortKey, type SortDir } from '@/types';
+interface PageProps {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
 
-const PAGE_SIZES = [5, 10, 20, 30];
-const COLS = 12;
+export default async function HomePage({ searchParams }: PageProps) {
+  const params = await searchParams;
+  const filters = parseSearchParams(params);
 
-export default function HomePage() {
-  const [sessions, setSessions] = useState<Session[]>([]);
-  const [search, setSearch] = useState('');
-  const [riskFilter, setRiskFilter] = useState('all');
-  const [sortKey, setSortKey] = useState<SortKey>('createdAt');
-  const [sortDir, setSortDir] = useState<SortDir>('desc');
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(5);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  // Fetch sessions from server action
+  const allSessions = await getSessions();
 
-  useEffect(() => {
-    const stored = localStorage.getItem('litoAi_sessions');
-    if (stored) setSessions(JSON.parse(stored));
-  }, []);
+  // Filter and paginate
+  const { sessions, totalSessions, totalPages, currentPage } = filterAndSortSessions(
+    allSessions,
+    filters
+  );
 
-  function toggleSort(key: SortKey) {
-    if (sortKey === key) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortKey(key);
-      setSortDir('asc');
-    }
-    setPage(1);
-  }
-
-  function handleSearchChange(val: string) {
-    setSearch(val);
-    setPage(1);
-  }
-
-  function handleRiskChange(val: string) {
-    setRiskFilter(val);
-    setPage(1);
-  }
-
-  function handlePageSizeChange(val: string) {
-    setPageSize(Number(val));
-    setPage(1);
-  }
-
-  function toggleAll() {
-    if (allPageSelected) {
-      setSelected((prev) => { const next = new Set(prev); paginated.forEach((s) => next.delete(s.id)); return next; });
-    } else {
-      setSelected((prev) => { const next = new Set(prev); paginated.forEach((s) => next.add(s.id)); return next; });
-    }
-  }
-
-  function toggleOne(id: string) {
-    setSelected((prev) => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; });
-  }
-
-  function handleDelete() {
-    const updated = sessions.filter((s) => !selected.has(s.id));
-    setSessions(updated);
-    localStorage.setItem('litoAi_sessions', JSON.stringify(updated));
-    setSelected(new Set());
-  }
-
-  const filtered = useMemo(() => {
-    let rows = [...sessions];
-    if (search) {
-      const q = search.toLowerCase();
-      rows = rows.filter(
-        (s) =>
-          s.intake.company.toLowerCase().includes(q) ||
-          s.intake.industry.toLowerCase().includes(q),
-      );
-    }
-    if (riskFilter !== 'all') {
-      rows = rows.filter((s) => s.riskLevel === riskFilter);
-    }
-    rows.sort((a, b) => {
-      let av: string | number;
-      let bv: string | number;
-      if (sortKey === 'industry') { av = a.intake.industry; bv = b.intake.industry; }
-      else if (sortKey === 'confidence') { av = a.confidence; bv = b.confidence; }
-      else { av = a.createdAt; bv = b.createdAt; }
-      if (av < bv) return sortDir === 'asc' ? -1 : 1;
-      if (av > bv) return sortDir === 'asc' ? 1 : -1;
-      return 0;
-    });
-    return rows;
-  }, [sessions, search, riskFilter, sortKey, sortDir]);
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
-  const allPageSelected = paginated.length > 0 && paginated.every((s) => selected.has(s.id));
-  const somePageSelected = !allPageSelected && paginated.some((s) => selected.has(s.id));
+  // Check if there are any sessions at all
+  const hasNoSessions = allSessions.length === 0;
+  const hasNoResults = !hasNoSessions && sessions.length === 0;
 
   return (
     <>
@@ -138,191 +33,30 @@ export default function HomePage() {
       </div>
 
       {/* Toolbar */}
-      <div className="flex items-center justify-between gap-4 py-4">
-        <div className="flex items-center gap-2 flex-1">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <Input
-              placeholder="Filter by startup name..."
-              value={search}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-          <Select value={riskFilter} onValueChange={handleRiskChange}>
-            <SelectTrigger className="w-37.5">
-              <SelectValue placeholder="Risk Level" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Risk Levels</SelectItem>
-              <SelectItem value="Low">Low</SelectItem>
-              <SelectItem value="Medium">Medium</SelectItem>
-              <SelectItem value="High">High</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <UploadDialog />
-      </div>
+      <SessionsToolbar />
 
       {/* Sessions table */}
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-10">
-                <input
-                  type="checkbox"
-                  className="h-4 w-4 rounded border-slate-300 cursor-pointer"
-                  checked={allPageSelected}
-                  ref={(el) => { if (el) el.indeterminate = somePageSelected; }}
-                  onChange={toggleAll}
-                />
-              </TableHead>
-              <TableHead>Company</TableHead>
-              <TableHead>Stage</TableHead>
-              <TableHead>
-                <Button variant="ghost" size="sm" className="-ml-3 h-8" onClick={() => toggleSort('industry')}>
-                  Industry <ArrowUpDown className="ml-2 h-3.5 w-3.5 text-slate-400" />
-                </Button>
-              </TableHead>
-              <TableHead>Primary Region</TableHead>
-              <TableHead>Revenue Model</TableHead>
-              <TableHead>Risk Level</TableHead>
-              <TableHead>
-                <Button variant="ghost" size="sm" className="-ml-3 h-8" onClick={() => toggleSort('confidence')}>
-                  AI Confidence <ArrowUpDown className="ml-2 h-3.5 w-3.5 text-slate-400" />
-                </Button>
-              </TableHead>
-              <TableHead>Decision</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>
-                <Button variant="ghost" size="sm" className="-ml-3 h-8" onClick={() => toggleSort('createdAt')}>
-                  Last Updated <ArrowUpDown className="ml-2 h-3.5 w-3.5 text-slate-400" />
-                </Button>
-              </TableHead>
-              <TableHead>Action</TableHead>
-              <TableHead />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sessions.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={COLS + 1} className="text-center py-32">
-                  <div className="flex flex-col items-center gap-2">
-                    <span className='bg-slate-100 p-3 rounded-md inline-flex'><FolderCode className="w-5 h-5 text-slate-800" /></span>
-                    <h1 className="text-base font-semibold text-slate-800">No Projects Yet</h1>
-                    <div className='text-gray-500 text-sm'>Import your first pitch deck to get started</div>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : filtered.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={COLS + 1} className="text-center text-slate-400 py-10">
-                  No results match your filters.
-                </TableCell>
-              </TableRow>
-            ) : (
-              paginated.map((s) => (
-                <TableRow key={s.id} data-selected={selected.has(s.id)} className="data-[selected=true]:bg-slate-50">
-                  <TableCell>
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-slate-300 cursor-pointer"
-                      checked={selected.has(s.id)}
-                      onChange={() => toggleOne(s.id)}
-                    />
-                  </TableCell>
-                  <TableCell className="font-medium">{s.intake.company}</TableCell>
-                  <TableCell className="text-slate-500">{s.intake.fundingStage}</TableCell>
-                  <TableCell className="text-slate-500">{s.intake.industry}</TableCell>
-                  <TableCell className="text-slate-500">{s.intake.primaryRegion ?? '—'}</TableCell>
-                  <TableCell className="text-slate-500">{s.intake.revenueModel ?? '—'}</TableCell>
-                  <TableCell>
-                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full border">
-                      {s.riskLevel}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <div className="w-18 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-slate-500"
-                          style={{ width: `${s.confidence}%` }}
-                        />
-                      </div>
-                      <span className="text-xs font-semibold text-slate-700 tabular-nums w-8 text-right">{s.confidence}%</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-slate-500">{s.intake.decision ?? '—'}</TableCell>
-                  <TableCell className="text-slate-500">{s.intake.status ?? '—'}</TableCell>
-                  <TableCell className="text-slate-500 text-xs">
-                    {new Date(s.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <EllipsisVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem asChild>
-                          <Link href={`/results?id=${s.id}`}>View</Link>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      {hasNoResults ? (
+        <div className="rounded-md border bg-white p-10 text-center text-slate-400">
+          No results match your filters.
+        </div>
+      ) : (
+        <SessionsTable
+          sessions={sessions}
+          sortKey={filters.sortKey || 'createdAt'}
+          sortDir={filters.sortDir || 'desc'}
+        />
+      )}
 
       {/* Pagination */}
-      <div className="flex items-center justify-between py-4 text-sm text-slate-500">
-        <div className="flex items-center gap-2">
-          <span>{selected.size} of {filtered.length} row{filtered.length !== 1 ? 's' : ''} selected</span>
-          {selected.size > 0 && (
-            <Button size="sm" variant="destructive" onClick={handleDelete} className="flex items-center gap-1.5 h-7 px-2 text-xs">
-              <Trash2 className="h-3 w-3" />
-              Delete
-            </Button>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <span>Rows per page</span>
-          <Select value={String(pageSize)} onValueChange={handlePageSizeChange}>
-            <SelectTrigger className="h-8 w-18">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {PAGE_SIZES.map((s) => (
-                <SelectItem key={s} value={String(s)}>{s}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <span>Page {page} of {totalPages}</span>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 w-8 p-0"
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 w-8 p-0"
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
+      {!hasNoSessions && (
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          pageSize={filters.pageSize || 5}
+          totalItems={totalSessions}
+        />
+      )}
     </>
   );
 }

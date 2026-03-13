@@ -1,5 +1,5 @@
-import SidebarNav from "@/components/SidebarNav";
-import GlobalBreadcrumb from "@/components/GlobalBreadcrumb";
+import SidebarNav from "@/components/shared/SidebarNav";
+import GlobalBreadcrumb from "@/components/shared/GlobalBreadcrumb";
 
 export default function DashboardLayout({
   children,

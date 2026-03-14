@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { fetchAuthSession } from "aws-amplify/auth";
 
 type UploadState =
   | { status: "idle" }
@@ -14,12 +15,16 @@ export function useUpload() {
 
   async function upload(file: File) {
     try {
+      // Get Amplify JWT to identify the user server-side
+      const session = await fetchAuthSession();
+      const token = session.tokens?.accessToken?.toString() ?? "";
+
       // Step 1: Get presigned URL + jobId
       setState({ status: "uploading", progress: "Requesting upload URL…" });
 
       const uploadRes = await fetch("/api/upload", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: token },
         body: JSON.stringify({
           fileName: file.name,
           fileType: file.type || "application/pdf",
@@ -45,7 +50,7 @@ export function useUpload() {
 
       const jobRes = await fetch("/api/start-job", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: token },
         body: JSON.stringify({ jobId, s3Key }),
       });
 

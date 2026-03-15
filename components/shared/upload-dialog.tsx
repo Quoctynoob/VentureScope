@@ -12,7 +12,6 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import Link from 'next/link';
 
 type FileUploadStatus = 'pending' | 'uploading' | 'success' | 'error';
 
@@ -136,26 +135,23 @@ export function UploadDialog() {
     }
   }
 
-  async function handleGenerateReports() {
-    // Upload all pending files
+  async function handleUploadFiles() {
     const pendingFiles = files.filter((f) => f.status === 'pending');
-
     for (const file of pendingFiles) {
       await uploadSingleFile(file);
     }
+  }
 
-    // After all uploads complete, navigate to processing page with all jobIds
-    setTimeout(() => {
-      const successfulJobIds = files
-        .filter((f) => f.status === 'success' && f.jobId)
-        .map((f) => f.jobId!);
+  function handleGenerateReports() {
+    const successfulJobIds = files
+      .filter((f) => f.status === 'success' && f.jobId)
+      .map((f) => f.jobId!);
 
-      if (successfulJobIds.length > 0) {
-        setOpen(false);
-        setFiles([]); // Clear for next upload
-        router.push(`/processing?jobIds=${successfulJobIds.join(',')}`);
-      }
-    }, 500);
+    if (successfulJobIds.length > 0) {
+      setOpen(false);
+      setFiles([]);
+      router.push(`/processing?jobIds=${successfulJobIds.join(',')}`);
+    }
   }
 
   function formatFileSize(bytes: number): string {
@@ -168,21 +164,16 @@ export function UploadDialog() {
 
   const hasFiles = files.length > 0;
   const isUploading = files.some((f) => f.status === 'uploading');
-  const canGenerate = hasFiles && !isUploading;
+  const hasPending = files.some((f) => f.status === 'pending');
+  const allUploaded = hasFiles && !hasPending && !isUploading && files.every((f) => f.status === 'success');
 
   return (
     <div className="flex items-center gap-2">
-      <Link href="/project-intake">
-        <Button variant="outline">
-          <Plus className="mr-1 h-4 w-4" />
-          Add New Company
-        </Button>
-      </Link>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
           <Button>
             <Plus className="mr-1 h-4 w-4" />
-            Add New Company (Beta)
+            Add New Company
           </Button>
         </DialogTrigger>
         <DialogContent className="sm:max-w-2xl p-8">
@@ -230,8 +221,8 @@ export function UploadDialog() {
           </div>
 
           {/* Guidance Notes */}
-          <div className="mt-3 px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-xs text-blue-800">
+          <div className="mt-3 px-4 py-3  border rounded-lg">
+            <p className="text-xs text-gray-bg">
               <span className="font-semibold">Note:</span> Each PDF will be analyzed as a separate company.
               If you have multiple documents for one company, please combine them into a single PDF first.
               You can navigate away from the processing page anytime - your analyses will continue running in the background.
@@ -310,14 +301,18 @@ export function UploadDialog() {
             </div>
           )}
 
-          {/* Generate Reports Button */}
+          {/* Action Button */}
           <div className="mt-6 flex justify-end">
             <Button
-              onClick={handleGenerateReports}
-              disabled={!canGenerate}
+              onClick={allUploaded ? handleGenerateReports : handleUploadFiles}
+              disabled={!hasFiles || isUploading}
               className="w-full sm:w-auto"
             >
-              Generate Report{files.length > 1 ? 's' : ''}
+              {isUploading
+                ? 'Uploading...'
+                : allUploaded
+                ? `Generate Report${files.length > 1 ? 's' : ''}`
+                : `Upload File${files.length > 1 ? 's' : ''}`}
             </Button>
           </div>
         </DialogContent>

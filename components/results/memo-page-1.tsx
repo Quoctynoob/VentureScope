@@ -59,7 +59,7 @@ export function MemoPage1({ memo }: MemoPage1Props) {
   return (
     <div className="space-y-6">
       {/* Main Content Box */}
-      <div className="bg-memo-bg rounded-lg p-8 space-y-6">
+      <div className="bg-memo-bg rounded-xl p-8 space-y-6">
         {/* Company Name */}
         <div>
           <h1 className="text-2xl font-medium text-black">Company Name: {memo.company_name}</h1>

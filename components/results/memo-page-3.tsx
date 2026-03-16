@@ -1,19 +1,33 @@
 'use client';
 
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, Pencil } from 'lucide-react';
 
 type OnDiscuss = (sectionName: string, sectionKey: string, sectionData: any) => void;
+type OnEdit = (sectionName: string, sectionKey: string, sectionData: any) => void;
 
-function DiscussBtn({ label, sectionKey, data, onDiscuss }: { label: string; sectionKey: string; data: any; onDiscuss?: OnDiscuss }) {
-  if (!onDiscuss) return null;
+function SectionActions({ label, sectionKey, data, onDiscuss, onEdit }: { label: string; sectionKey: string; data: any; onDiscuss?: OnDiscuss; onEdit?: OnEdit }) {
+  if (!onDiscuss && !onEdit) return null;
   return (
-    <button
-      onClick={() => onDiscuss(label, sectionKey, data)}
-      className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600 transition-colors ml-auto"
-    >
-      <MessageSquare className="h-3.5 w-3.5" />
-      Discuss
-    </button>
+    <div className="flex items-center gap-2 ml-auto">
+      {onEdit && (
+        <button
+          onClick={() => onEdit(label, sectionKey, data)}
+          className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600 transition-colors"
+        >
+          <Pencil className="h-3.5 w-3.5" />
+          Edit
+        </button>
+      )}
+      {onDiscuss && (
+        <button
+          onClick={() => onDiscuss(label, sectionKey, data)}
+          className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600 transition-colors"
+        >
+          <MessageSquare className="h-3.5 w-3.5" />
+          Discuss
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -60,9 +74,10 @@ interface MemoData {
 interface MemoPage3Props {
   memo: MemoData;
   onDiscuss?: OnDiscuss;
+  onEdit?: OnEdit;
 }
 
-export function MemoPage3({ memo, onDiscuss }: MemoPage3Props) {
+export function MemoPage3({ memo, onDiscuss, onEdit }: MemoPage3Props) {
   return (
     <div className="space-y-6">
       {/* Section 9: Claim Verifications */}
@@ -70,7 +85,7 @@ export function MemoPage3({ memo, onDiscuss }: MemoPage3Props) {
         <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-6 space-y-4">
           <div className="flex items-center">
             <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">SECTION 9: CLAIM VERIFICATIONS</h2>
-            <DiscussBtn label="Claim Verifications" sectionKey="claim_verifications" data={memo.claim_verifications} onDiscuss={onDiscuss} />
+            <SectionActions label="Claim Verifications" sectionKey="claim_verifications" data={memo.claim_verifications} onDiscuss={onDiscuss} onEdit={onEdit} />
           </div>
 
           <div className="grid grid-cols-3 gap-4">
@@ -156,7 +171,7 @@ export function MemoPage3({ memo, onDiscuss }: MemoPage3Props) {
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">SECTION 11: PENALTIES</h2>
-            <DiscussBtn label="Penalties" sectionKey="penalties" data={memo.penalties} onDiscuss={onDiscuss} />
+            <SectionActions label="Penalties" sectionKey="penalties" data={memo.penalties} onDiscuss={onDiscuss} onEdit={onEdit} />
           </div>
           <div className="text-lg font-bold text-black">-{memo.penalties?.total ?? 0}</div>
         </div>
@@ -183,7 +198,7 @@ export function MemoPage3({ memo, onDiscuss }: MemoPage3Props) {
         <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-6 space-y-6">
           <div className="flex items-center">
             <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">SECTION 12: NEXT STEPS</h2>
-            <DiscussBtn label="Next Steps" sectionKey="next_steps" data={memo.next_steps} onDiscuss={onDiscuss} />
+            <SectionActions label="Next Steps" sectionKey="next_steps" data={memo.next_steps} onDiscuss={onDiscuss} onEdit={onEdit} />
           </div>
 
           {/* What to Request */}
@@ -245,7 +260,7 @@ export function MemoPage3({ memo, onDiscuss }: MemoPage3Props) {
         <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-6 space-y-4">
           <div className="flex items-center">
             <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">SECTION 13: FINAL RECOMMENDATION</h2>
-            <DiscussBtn label="Final Recommendation" sectionKey="recommendation_rationale" data={memo.recommendation_rationale} onDiscuss={onDiscuss} />
+            <SectionActions label="Final Recommendation" sectionKey="recommendation_rationale" data={memo.recommendation_rationale} onDiscuss={onDiscuss} onEdit={onEdit} />
           </div>
           <p className="text-sm text-black leading-relaxed">{memo.recommendation_rationale}</p>
         </div>

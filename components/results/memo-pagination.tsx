@@ -8,6 +8,7 @@ import { MemoPage1 } from './memo-page-1';
 import { MemoPage2 } from './memo-page-2';
 import { MemoPage3 } from './memo-page-3';
 import { ChatSidebar } from './chat-sidebar';
+import { EditModal } from './edit-modal';
 
 interface MemoPaginationProps {
   memo: any;
@@ -51,6 +52,13 @@ export function MemoPagination({ memo, jobId, companyName }: MemoPaginationProps
     sectionData: null,
   });
 
+  const [editState, setEditState] = useState<ChatState>({
+    isOpen: false,
+    sectionName: '',
+    sectionKey: '',
+    sectionData: null,
+  });
+
   const currentPage = parseInt(searchParams.get('page') || '1');
 
   function updatePage(page: number) {
@@ -61,6 +69,26 @@ export function MemoPagination({ memo, jobId, companyName }: MemoPaginationProps
 
   function openChat(sectionName: string, sectionKey: string, sectionData: any) {
     setChatState({ isOpen: true, sectionName, sectionKey, sectionData });
+  }
+
+  function openEdit(sectionName: string, sectionKey: string, sectionData: any) {
+    setEditState({ isOpen: true, sectionName, sectionKey, sectionData });
+  }
+
+  async function handleEditSave(updatedData: any) {
+    const newMemoState = setAtPath(memoData, editState.sectionKey, updatedData);
+    setMemoData(newMemoState);
+
+    try {
+      const response = await fetch('/api/save-memo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId, fullMemo: newMemoState }),
+      });
+      if (!response.ok) throw new Error('Failed to save');
+    } catch (err) {
+      console.error('Failed to save edit:', err);
+    }
   }
 
   // FIXED: Added 'async' here so 'await fetch' works correctly
@@ -180,9 +208,9 @@ export function MemoPagination({ memo, jobId, companyName }: MemoPaginationProps
 
         {/* Page content */}
         <div className="animate-in fade-in duration-200">
-          {currentPage === 1 && <MemoPage1 memo={memoData} onDiscuss={openChat} />}
-          {currentPage === 2 && <MemoPage2 memo={memoData} onDiscuss={openChat} />}
-          {currentPage === 3 && <MemoPage3 memo={memoData} onDiscuss={openChat} />}
+          {currentPage === 1 && <MemoPage1 memo={memoData} onDiscuss={openChat} onEdit={openEdit} />}
+          {currentPage === 2 && <MemoPage2 memo={memoData} onDiscuss={openChat} onEdit={openEdit} />}
+          {currentPage === 3 && <MemoPage3 memo={memoData} onDiscuss={openChat} onEdit={openEdit} />}
         </div>
 
         {/* Bottom pagination */}
@@ -210,6 +238,15 @@ export function MemoPagination({ memo, jobId, companyName }: MemoPaginationProps
           </Button>
         </div>
       </div>
+
+      {/* Edit modal */}
+      <EditModal
+        isOpen={editState.isOpen}
+        sectionName={editState.sectionName}
+        sectionData={editState.sectionData}
+        onClose={() => setEditState((prev) => ({ ...prev, isOpen: false }))}
+        onSave={handleEditSave}
+      />
 
       {/* Chat sidebar — rendered outside the scroll container */}
       <ChatSidebar

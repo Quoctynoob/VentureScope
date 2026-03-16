@@ -1,6 +1,6 @@
 'use client';
 
-import { CircleCheckBig, MessageSquare } from 'lucide-react';
+import { CircleCheckBig, MessageSquare, Pencil } from 'lucide-react';
 
 interface MemoData {
   company_name: string;
@@ -53,26 +53,41 @@ interface MemoData {
 }
 
 type OnDiscuss = (sectionName: string, sectionKey: string, sectionData: any) => void;
+type OnEdit = (sectionName: string, sectionKey: string, sectionData: any) => void;
 
 interface MemoPage1Props {
   memo: MemoData;
   onDiscuss?: OnDiscuss;
+  onEdit?: OnEdit;
 }
 
-function DiscussBtn({ label, sectionKey, data, onDiscuss }: { label: string; sectionKey: string; data: any; onDiscuss?: OnDiscuss }) {
-  if (!onDiscuss) return null;
+function SectionActions({ label, sectionKey, data, onDiscuss, onEdit }: { label: string; sectionKey: string; data: any; onDiscuss?: OnDiscuss; onEdit?: OnEdit }) {
+  if (!onDiscuss && !onEdit) return null;
   return (
-    <button
-      onClick={() => onDiscuss(label, sectionKey, data)}
-      className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600 transition-colors ml-auto"
-    >
-      <MessageSquare className="h-3.5 w-3.5" />
-      Discuss
-    </button>
+    <div className="flex items-center gap-2 ml-auto">
+      {onEdit && (
+        <button
+          onClick={() => onEdit(label, sectionKey, data)}
+          className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600 transition-colors"
+        >
+          <Pencil className="h-3.5 w-3.5" />
+          Edit
+        </button>
+      )}
+      {onDiscuss && (
+        <button
+          onClick={() => onDiscuss(label, sectionKey, data)}
+          className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600 transition-colors"
+        >
+          <MessageSquare className="h-3.5 w-3.5" />
+          Discuss
+        </button>
+      )}
+    </div>
   );
 }
 
-export function MemoPage1({ memo, onDiscuss }: MemoPage1Props) {
+export function MemoPage1({ memo, onDiscuss, onEdit }: MemoPage1Props) {
   const scorePercentage = memo.verdict?.score || 0;
 
   return (
@@ -132,7 +147,7 @@ export function MemoPage1({ memo, onDiscuss }: MemoPage1Props) {
         <div className="space-y-4">
           <div className="flex items-center">
             <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">SECTION 1: THE VERDICT</h2>
-            <DiscussBtn label="The Verdict" sectionKey="verdict" data={memo.verdict} onDiscuss={onDiscuss} />
+            <SectionActions label="The Verdict" sectionKey="verdict" data={memo.verdict} onDiscuss={onDiscuss} onEdit={onEdit} />
           </div>
 
           {/* Score Display - Left Aligned */}
@@ -198,7 +213,7 @@ export function MemoPage1({ memo, onDiscuss }: MemoPage1Props) {
         <div className="bg-white rounded-lg p-6 space-y-4">
           <div className="flex items-center">
             <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">SECTION 2: SCORE BREAKDOWN</h2>
-            <DiscussBtn label="Score Breakdown" sectionKey="score_breakdown" data={memo.score_breakdown} onDiscuss={onDiscuss} />
+            <SectionActions label="Score Breakdown" sectionKey="score_breakdown" data={memo.score_breakdown} onDiscuss={onDiscuss} onEdit={onEdit} />
           </div>
 
           <div className="space-y-3">
@@ -273,7 +288,7 @@ export function MemoPage1({ memo, onDiscuss }: MemoPage1Props) {
           <div className="bg-white rounded-lg p-6 space-y-4">
             <div className="flex items-center">
               <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">SECTION 3: CONSOLIDATED SUMMARY</h2>
-              <DiscussBtn label="Consolidated Summary" sectionKey="verified_strengths" data={memo.verified_strengths} onDiscuss={onDiscuss} />
+              <SectionActions label="Consolidated Summary" sectionKey="verified_strengths" data={memo.verified_strengths} onDiscuss={onDiscuss} onEdit={onEdit} />
             </div>
 
             <ul className="space-y-2">

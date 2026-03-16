@@ -56,6 +56,9 @@
   --color-bar-export: #4FA49F;
   --color-curve-purple: #ABA6C6;
   --color-curve-green: #4FA49F;
+  --color-bar-gray: #6B7280;
+  --color-bar-dark: #262626;
+  --color-bar-empty: #E5E5E5;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);

@@ -142,9 +142,9 @@ export function MemoPage1({ memo, onDiscuss }: MemoPage1Props) {
           </div>
 
           {/* Progress Bar */}
-          <div className="w-full h-3 bg-black rounded-full overflow-hidden">
+          <div className="w-full h-3 bg-bar-dark rounded-full overflow-hidden">
             <div
-              className="h-full bg-slate-400 transition-all rounded-full"
+              className="h-full bg-bar-gray transition-all rounded-full"
               style={{ width: `${scorePercentage}%` }}
             />
           </div>
@@ -235,8 +235,8 @@ export function MemoPage1({ memo, onDiscuss }: MemoPage1Props) {
               return (
                 <div key={cat.name} className="flex items-center gap-4">
                   <p className="text-sm text-black w-40">{cat.name}</p>
-                  <div className="flex-1 h-2 bg-slate-400 rounded-full overflow-hidden">
-                    <div className="h-full bg-black rounded-full transition-all" style={{ width: `${percentage}%` }} />
+                  <div className="flex-1 h-2 bg-bar-empty rounded-full overflow-hidden">
+                    <div className="h-full bg-bar-dark rounded-full transition-all" style={{ width: `${percentage}%` }} />
                   </div>
                   <p className="text-sm text-black w-16 text-right">
                     {cat.score} / {cat.max}

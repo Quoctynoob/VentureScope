@@ -19,7 +19,7 @@ type SegmentKey = (typeof SEGMENTS)[number]['key'];
 //   "Fundability"                          → score
 //   "Generating"                           → export
 function getPercentages(_sessions: Session[]): Record<SegmentKey, number> {
-  return { extraction: 20, parse: 15, review: 10, verification: 20, score: 20, export: 15 };
+  return { extraction: 20, parse: 15, review: 5, verification: 20, score: 20, export: 20 };
 }
 
 interface PipelineBarProps {
